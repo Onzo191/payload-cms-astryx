@@ -5,11 +5,17 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
+import { ensureAuthDefaults } from './auth/defaults'
+import { Permissions } from './collections/Permissions'
+import { Roles } from './collections/Roles'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+const isProductionBuild =
+  process.env.npm_lifecycle_event === 'build' || process.env.NEXT_PHASE === 'phase-production-build'
+const shouldSeedAuthDefaults = process.env.PAYLOAD_SEED_AUTH_DEFAULTS !== 'false' && !isProductionBuild
 
 export default buildConfig({
   admin: {
@@ -18,7 +24,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media],
+  collections: [Users, Roles, Permissions, Media],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -31,4 +37,9 @@ export default buildConfig({
   }),
   sharp,
   plugins: [],
+  onInit: async (payload) => {
+    if (shouldSeedAuthDefaults) {
+      await ensureAuthDefaults(payload)
+    }
+  },
 })

@@ -68,6 +68,8 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    roles: Role;
+    permissions: Permission;
     media: Media;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -77,6 +79,8 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    roles: RolesSelect<false> | RolesSelect<true>;
+    permissions: PermissionsSelect<false> | PermissionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -123,8 +127,57 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
+  accountStatus: 'active' | 'invited' | 'suspended' | 'locked' | 'offboarded';
+  /**
+   * Primary tenant key used by tenant-scoped ABAC rules.
+   */
+  tenant?: string | null;
+  department?: string | null;
+  /**
+   * Baseline roles that are always active for this account.
+   */
+  roles?: (number | Role)[] | null;
+  /**
+   * Dynamic role grants. Tenant and date bounds are folded into policy evaluation.
+   */
+  roleAssignments?:
+    | {
+        role: number | Role;
+        /**
+         * Optional tenant key that constrains this role grant.
+         */
+        tenant?: string | null;
+        startsAt?: string | null;
+        endsAt?: string | null;
+        enabled?: boolean | null;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Emergency per-account permission grants. Prefer roles for normal use.
+   */
+  directPermissions?: (number | Permission)[] | null;
+  /**
+   * Free-form ABAC attributes. Reference via $user.attributes.someKey.
+   */
+  attributes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
   email: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
@@ -144,11 +197,116 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: number;
+  name: string;
+  /**
+   * Stable machine key, for example account-manager.
+   */
+  key: string;
+  description?: string | null;
+  enabled?: boolean | null;
+  /**
+   * Optional hierarchy marker. Lower numbers are more privileged.
+   */
+  level?: number | null;
+  /**
+   * Bypasses policy checks. Only super admins can update this field.
+   */
+  isSuperAdmin?: boolean | null;
+  /**
+   * Optional parent roles. Permissions are inherited recursively.
+   */
+  inherits?: (number | Role)[] | null;
+  /**
+   * Permission policies granted by this role.
+   */
+  permissions: (number | Permission)[];
+  /**
+   * Seed-managed role. Only super admins can change this flag.
+   */
+  system?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "permissions".
+ */
+export interface Permission {
+  id: number;
+  name: string;
+  /**
+   * Stable machine key, for example users.read.own.
+   */
+  key: string;
+  description?: string | null;
+  resource: '*' | 'users' | 'roles' | 'permissions' | 'media';
+  action: 'manage' | 'create' | 'read' | 'update' | 'delete' | 'admin' | 'unlock' | 'readVersions';
+  effect: 'allow' | 'deny';
+  conditions: {
+    scope: 'global' | 'own' | 'tenant' | 'public' | 'custom';
+    /**
+     * Document field compared to the current account. Common values: id, createdBy.
+     */
+    ownerField?: string | null;
+    /**
+     * Account field used for ownership comparison. Common value: id.
+     */
+    userField?: string | null;
+    /**
+     * Document field compared to account tenant.
+     */
+    tenantField?: string | null;
+    /**
+     * Account field that stores tenant identity.
+     */
+    tenantUserField?: string | null;
+    /**
+     * Payload where filter for public documents.
+     */
+    publicWhere?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    /**
+     * Payload where filter. Supports tokens like $user.id, $user.tenant, $grant.tenant, and $now.
+     */
+    customWhere?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  enabled?: boolean | null;
+  validFrom?: string | null;
+  validUntil?: string | null;
+  /**
+   * Seed-managed permission. Only super admins can change this flag.
+   */
+  system?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
   id: number;
   alt: string;
+  createdBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -188,6 +346,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: number | User;
+      } | null)
+    | ({
+        relationTo: 'roles';
+        value: number | Role;
+      } | null)
+    | ({
+        relationTo: 'permissions';
+        value: number | Permission;
       } | null)
     | ({
         relationTo: 'media';
@@ -240,8 +406,31 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  displayName?: T;
+  accountStatus?: T;
+  tenant?: T;
+  department?: T;
+  roles?: T;
+  roleAssignments?:
+    | T
+    | {
+        role?: T;
+        tenant?: T;
+        startsAt?: T;
+        endsAt?: T;
+        enabled?: T;
+        note?: T;
+        id?: T;
+      };
+  directPermissions?: T;
+  attributes?: T;
   updatedAt?: T;
   createdAt?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
   email?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;
@@ -259,10 +448,57 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles_select".
+ */
+export interface RolesSelect<T extends boolean = true> {
+  name?: T;
+  key?: T;
+  description?: T;
+  enabled?: T;
+  level?: T;
+  isSuperAdmin?: T;
+  inherits?: T;
+  permissions?: T;
+  system?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "permissions_select".
+ */
+export interface PermissionsSelect<T extends boolean = true> {
+  name?: T;
+  key?: T;
+  description?: T;
+  resource?: T;
+  action?: T;
+  effect?: T;
+  conditions?:
+    | T
+    | {
+        scope?: T;
+        ownerField?: T;
+        userField?: T;
+        tenantField?: T;
+        tenantUserField?: T;
+        publicWhere?: T;
+        customWhere?: T;
+      };
+  enabled?: T;
+  validFrom?: T;
+  validUntil?: T;
+  system?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

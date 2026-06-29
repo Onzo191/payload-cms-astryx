@@ -2,9 +2,10 @@ import { getPayload } from 'payload'
 import config from '../../src/payload.config.js'
 
 export const testUser = {
+  accountStatus: 'active',
   email: 'dev@payloadcms.com',
   password: 'test',
-}
+} as const
 
 /**
  * Seeds a test user for e2e admin tests.
