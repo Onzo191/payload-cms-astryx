@@ -1,0 +1,47 @@
+.microsoft-login {
+  margin-bottom: 1rem;
+}
+
+.microsoft-login__button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--theme-elevation-250);
+  border-radius: 4px;
+  color: var(--theme-text);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-weight: 600;
+  gap: 0.75rem;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.625rem 1rem;
+  width: 100%;
+}
+
+.microsoft-login__button:hover {
+  background: var(--theme-elevation-50);
+}
+
+.microsoft-login__mark {
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(2, 8px);
+  grid-template-rows: repeat(2, 8px);
+}
+
+.microsoft-login__mark span:nth-child(1) {
+  background: #f25022;
+}
+
+.microsoft-login__mark span:nth-child(2) {
+  background: #7fba00;
+}
+
+.microsoft-login__mark span:nth-child(3) {
+  background: #00a4ef;
+}
+
+.microsoft-login__mark span:nth-child(4) {
+  background: #ffb900;
+}

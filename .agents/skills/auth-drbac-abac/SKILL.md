@@ -21,6 +21,9 @@ This project implements authorization through a DRBAC hybrid ABAC layer.
 - `roleAssignments` are dynamic grants with optional tenant and time bounds.
 - Permissions can return Payload `Where` filters through ABAC scopes.
 - Field-level access can only return boolean, so sensitive fields use `canField('*', 'manage')`.
+- Payload document IDs are UUID v7 strings via `postgresAdapter({ idType: 'uuidv7' })`.
+- Microsoft identity fields are system-managed. They are written only by the Office login callback, not by Admin form input.
+- Microsoft-linked accounts should be offboarded by status/lifecycle helpers; do not hard-delete them from automation.
 
 ## Change Workflow
 
@@ -40,3 +43,7 @@ When adding or changing protected behavior:
 - Do not loosen role-grant fields without privilege-escalation coverage.
 - Do not use direct DB queries for user-facing operations that should enforce access.
 - Do not assume JWT role fields are populated; fetch and evaluate the full profile.
+- Do not introduce integer document IDs or custom numeric `id` fields.
+- Do not rely on automatic schema push to convert an existing integer-ID database to UUID v7.
+- Do not expose Microsoft object/tenant ID fields as manual Admin inputs.
+- Use `softOffboardMicrosoftAccount` or `accountStatus: 'offboarded'` for deprovisioning instead of automatic hard delete.

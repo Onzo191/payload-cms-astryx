@@ -88,7 +88,7 @@ export interface Config {
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: number;
+    defaultIDType: string;
   };
   fallbackLocale: null;
   globals: {};
@@ -126,10 +126,11 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: number;
+  id: string;
   firstName?: string | null;
   lastName?: string | null;
   displayName?: string | null;
+  authProvider?: ('local' | 'microsoft') | null;
   accountStatus: 'active' | 'invited' | 'suspended' | 'locked' | 'offboarded';
   /**
    * Primary tenant key used by tenant-scoped ABAC rules.
@@ -137,15 +138,30 @@ export interface User {
   tenant?: string | null;
   department?: string | null;
   /**
+   * Set automatically after a successful Microsoft login.
+   */
+  lastMicrosoftLoginAt?: string | null;
+  /**
+   * Set automatically when the account is offboarded.
+   */
+  offboardedAt?: string | null;
+  /**
+   * Set automatically when the account is suspended, locked, or offboarded.
+   */
+  deactivationReason?: string | null;
+  microsoftObjectID?: string | null;
+  microsoftTenantID?: string | null;
+  microsoftLinkedAt?: string | null;
+  /**
    * Baseline roles that are always active for this account.
    */
-  roles?: (number | Role)[] | null;
+  roles?: (string | Role)[] | null;
   /**
    * Dynamic role grants. Tenant and date bounds are folded into policy evaluation.
    */
   roleAssignments?:
     | {
-        role: number | Role;
+        role: string | Role;
         /**
          * Optional tenant key that constrains this role grant.
          */
@@ -160,7 +176,7 @@ export interface User {
   /**
    * Emergency per-account permission grants. Prefer roles for normal use.
    */
-  directPermissions?: (number | Permission)[] | null;
+  directPermissions?: (string | Permission)[] | null;
   /**
    * Free-form ABAC attributes. Reference via $user.attributes.someKey.
    */
@@ -200,7 +216,7 @@ export interface User {
  * via the `definition` "roles".
  */
 export interface Role {
-  id: number;
+  id: string;
   name: string;
   /**
    * Stable machine key, for example account-manager.
@@ -219,11 +235,11 @@ export interface Role {
   /**
    * Optional parent roles. Permissions are inherited recursively.
    */
-  inherits?: (number | Role)[] | null;
+  inherits?: (string | Role)[] | null;
   /**
    * Permission policies granted by this role.
    */
-  permissions: (number | Permission)[];
+  permissions: (string | Permission)[];
   /**
    * Seed-managed role. Only super admins can change this flag.
    */
@@ -236,7 +252,7 @@ export interface Role {
  * via the `definition` "permissions".
  */
 export interface Permission {
-  id: number;
+  id: string;
   name: string;
   /**
    * Stable machine key, for example users.read.own.
@@ -304,9 +320,9 @@ export interface Permission {
  * via the `definition` "media".
  */
 export interface Media {
-  id: number;
+  id: string;
   alt: string;
-  createdBy?: (number | null) | User;
+  createdBy?: (string | null) | User;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -324,7 +340,7 @@ export interface Media {
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: number;
+  id: string;
   key: string;
   data:
     | {
@@ -341,28 +357,28 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: number;
+  id: string;
   document?:
     | ({
         relationTo: 'users';
-        value: number | User;
+        value: string | User;
       } | null)
     | ({
         relationTo: 'roles';
-        value: number | Role;
+        value: string | Role;
       } | null)
     | ({
         relationTo: 'permissions';
-        value: number | Permission;
+        value: string | Permission;
       } | null)
     | ({
         relationTo: 'media';
-        value: number | Media;
+        value: string | Media;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -372,10 +388,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: number;
+  id: string;
   user: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   };
   key?: string | null;
   value?:
@@ -395,7 +411,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: number;
+  id: string;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -409,9 +425,16 @@ export interface UsersSelect<T extends boolean = true> {
   firstName?: T;
   lastName?: T;
   displayName?: T;
+  authProvider?: T;
   accountStatus?: T;
   tenant?: T;
   department?: T;
+  lastMicrosoftLoginAt?: T;
+  offboardedAt?: T;
+  deactivationReason?: T;
+  microsoftObjectID?: T;
+  microsoftTenantID?: T;
+  microsoftLinkedAt?: T;
   roles?: T;
   roleAssignments?:
     | T

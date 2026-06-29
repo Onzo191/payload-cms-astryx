@@ -3,7 +3,7 @@ import type { CollectionBeforeChangeHook, Payload } from 'payload'
 import { DEFAULT_MEMBER_ROLE_KEY, SUPER_ADMIN_ROLE_KEY } from './constants'
 
 type SeededDoc = {
-  id: number | string
+  id: string
   key?: string | null
 }
 
@@ -199,7 +199,7 @@ export const ensureAuthDefaults = async (payload: Payload) => {
   for (const role of defaultRoles) {
     const permissionIds = role.permissionKeys
       .map((permissionKey) => permissionsByKey.get(permissionKey)?.id)
-      .filter((id): id is string | number => id !== undefined)
+      .filter((id): id is string => id !== undefined)
 
     const doc = await upsertByKey({
       collection: 'roles',

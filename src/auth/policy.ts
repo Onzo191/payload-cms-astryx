@@ -254,7 +254,7 @@ const collectPermissionGrantsFromRole = ({
 }: {
   now: Date
   role: PolicyRole
-  seenRoleKeys: Set<string | number>
+  seenRoleKeys: Set<string>
   tenant?: string | null
 }): PermissionGrant[] => {
   const roleKey = role.key || role.id
@@ -300,7 +300,7 @@ const collectPermissionGrantsFromRole = ({
 
 export const buildAccessProfile = (user: PolicyUser, now = new Date()): AccessProfile => {
   const roles: PolicyRole[] = []
-  const seenRoleKeys = new Set<string | number>()
+  const seenRoleKeys = new Set<string>()
 
   const grants = [
     ...toArray(user.directPermissions)

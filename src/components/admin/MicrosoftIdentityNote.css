@@ -1,0 +1,18 @@
+.microsoft-identity-note {
+  background: var(--theme-elevation-50);
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 4px;
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding: 0.875rem 1rem;
+}
+
+.microsoft-identity-note strong {
+  font-weight: 600;
+}
+
+.microsoft-identity-note span {
+  color: var(--theme-elevation-700);
+  line-height: 1.45;
+}

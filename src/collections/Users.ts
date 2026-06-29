@@ -7,6 +7,7 @@ import {
   combineAccessResults,
   selfUserAccess,
 } from '@/auth/access'
+import { applyAccountLifecycle, preventHardDeleteMicrosoftAccount } from '@/auth/accountLifecycle'
 import { assignDefaultAccountRole } from '@/auth/defaults'
 import { ACCOUNT_STATUS_OPTIONS } from '@/auth/constants'
 
@@ -70,13 +71,31 @@ export const Users: CollectionConfig = {
       type: 'row',
       fields: [
         {
+          name: 'authProvider',
+          type: 'select',
+          access: {
+            create: () => false,
+            update: () => false,
+          },
+          admin: {
+            readOnly: true,
+            width: '25%',
+          },
+          defaultValue: 'local',
+          options: [
+            { label: 'Local', value: 'local' },
+            { label: 'Microsoft', value: 'microsoft' },
+          ],
+          saveToJWT: true,
+        },
+        {
           name: 'accountStatus',
           type: 'select',
           access: {
             update: canField('users', 'manage'),
           },
           admin: {
-            width: '33%',
+            width: '25%',
           },
           defaultValue: 'active',
           index: true,
@@ -92,7 +111,7 @@ export const Users: CollectionConfig = {
           },
           admin: {
             description: 'Primary tenant key used by tenant-scoped ABAC rules.',
-            width: '33%',
+            width: '25%',
           },
           index: true,
           saveToJWT: true,
@@ -104,12 +123,104 @@ export const Users: CollectionConfig = {
             update: canField('users', 'manage'),
           },
           admin: {
-            width: '34%',
+            width: '25%',
           },
           index: true,
           saveToJWT: true,
         },
       ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'lastMicrosoftLoginAt',
+          type: 'date',
+          access: {
+            update: () => false,
+          },
+          admin: {
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+            description: 'Set automatically after a successful Microsoft login.',
+            readOnly: true,
+            width: '33%',
+          },
+        },
+        {
+          name: 'offboardedAt',
+          type: 'date',
+          access: {
+            update: () => false,
+          },
+          admin: {
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+            description: 'Set automatically when the account is offboarded.',
+            readOnly: true,
+            width: '33%',
+          },
+        },
+        {
+          name: 'deactivationReason',
+          type: 'text',
+          access: {
+            update: () => false,
+          },
+          admin: {
+            description: 'Set automatically when the account is suspended, locked, or offboarded.',
+            readOnly: true,
+            width: '34%',
+          },
+        },
+      ],
+    },
+    {
+      name: 'microsoftObjectID',
+      type: 'text',
+      access: {
+        read: canField('users', 'manage'),
+        update: () => false,
+      },
+      admin: {
+        hidden: true,
+      },
+      index: true,
+      unique: true,
+    },
+    {
+      name: 'microsoftTenantID',
+      type: 'text',
+      access: {
+        read: canField('users', 'manage'),
+        update: () => false,
+      },
+      admin: {
+        hidden: true,
+      },
+      index: true,
+    },
+    {
+      name: 'microsoftLinkedAt',
+      type: 'date',
+      access: {
+        read: canField('users', 'manage'),
+        update: () => false,
+      },
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: 'microsoftIdentityNote',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '@/components/admin/MicrosoftIdentityNote',
+        },
+      },
     },
     {
       name: 'roles',
@@ -214,6 +325,7 @@ export const Users: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeChange: [assignDefaultAccountRole],
+    beforeChange: [assignDefaultAccountRole, applyAccountLifecycle],
+    beforeDelete: [preventHardDeleteMicrosoftAccount],
   },
 }

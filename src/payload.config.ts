@@ -19,6 +19,9 @@ const shouldSeedAuthDefaults = process.env.PAYLOAD_SEED_AUTH_DEFAULTS !== 'false
 
 export default buildConfig({
   admin: {
+    components: {
+      beforeLogin: ['@/components/admin/MicrosoftLoginButton'],
+    },
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
@@ -31,6 +34,7 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({
+    idType: 'uuidv7',
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },

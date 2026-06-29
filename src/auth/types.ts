@@ -2,10 +2,12 @@ import type { Where } from 'payload'
 
 import type { AccountStatus, AuthAction, AuthEffect, AuthResource, AuthScope } from './constants'
 
-export type RelationValue<T extends PolicyRecord = PolicyRecord> = string | number | T | null | undefined
+export type RelationID = string
+
+export type RelationValue<T extends PolicyRecord = PolicyRecord> = RelationID | T | null | undefined
 
 export type PolicyRecord = {
-  id?: string | number
+  id?: RelationID
   [key: string]: unknown
 }
 
