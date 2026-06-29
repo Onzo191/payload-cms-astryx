@@ -69,7 +69,14 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    categories: Category;
+    tags: Tag;
+    pages: Page;
+    news: News;
+    reports: Report;
+    'audit-logs': AuditLog;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -78,7 +85,14 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    news: NewsSelect<false> | NewsSelect<true>;
+    reports: ReportsSelect<false> | ReportsSelect<true>;
+    'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -87,15 +101,34 @@ export interface Config {
     defaultIDType: string;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    header: Header;
+    footer: Footer;
+    'site-settings': SiteSetting;
+    'seo-defaults': SeoDefault;
+  };
+  globalsSelect: {
+    header: HeaderSelect<false> | HeaderSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'seo-defaults': SeoDefaultsSelect<false> | SeoDefaultsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      sitemap: TaskSitemap;
+      searchIndexing: TaskSearchIndexing;
+      reportTextExtraction: TaskReportTextExtraction;
+      schedulePublish: TaskSchedulePublish;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -123,6 +156,11 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
+  name: string;
+  roles: ('super-admin' | 'admin' | 'editor' | 'author' | 'reviewer' | 'viewer')[];
+  status: 'active' | 'invited' | 'suspended';
+  avatar?: (string | null) | Media;
+  bio?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -149,6 +187,9 @@ export interface User {
 export interface Media {
   id: string;
   alt: string;
+  caption?: string | null;
+  credit?: string | null;
+  visibility: 'public' | 'authenticated';
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -160,6 +201,282 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: string;
+  title: string;
+  /**
+   * URL-safe identifier. Leave blank to generate it from the title.
+   */
+  slug: string;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: string;
+  title: string;
+  /**
+   * URL-safe identifier. Leave blank to generate it from the title.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: string;
+  title: string;
+  /**
+   * URL-safe identifier. Leave blank to generate it from the title.
+   */
+  slug: string;
+  parent?: (string | null) | Page;
+  fullPath?: string | null;
+  hero?: {
+    eyebrow?: string | null;
+    heading?: string | null;
+    summary?: string | null;
+    image?: (string | null) | Media;
+    layout?: ('standard' | 'compact' | 'immersive') | null;
+  };
+  layout?:
+    | (
+        | {
+            hero?: {
+              eyebrow?: string | null;
+              heading?: string | null;
+              summary?: string | null;
+              image?: (string | null) | Media;
+              layout?: ('standard' | 'compact' | 'immersive') | null;
+            };
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'hero';
+          }
+        | {
+            content: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            };
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'richText';
+          }
+        | {
+            heading: string;
+            summary?: string | null;
+            href: string;
+            label: string;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'cta';
+          }
+        | {
+            report: string | Report;
+            displayMode?: ('summary' | 'card' | 'download') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'reportEmbed';
+          }
+      )[]
+    | null;
+  /**
+   * Search, social, and crawler metadata.
+   */
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    canonicalUrl?: string | null;
+    robots?: ('index-follow' | 'noindex-follow' | 'noindex-nofollow') | null;
+    openGraphImage?: (string | null) | Media;
+    schemaType?: ('WebPage' | 'NewsArticle' | 'Report' | 'Article') | null;
+  };
+  workflowStatus: 'draft' | 'review' | 'changes_requested' | 'approved' | 'published' | 'archived';
+  reviewNotes?: string | null;
+  publishedAt?: string | null;
+  approvedAt?: string | null;
+  archivedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reports".
+ */
+export interface Report {
+  id: string;
+  title: string;
+  /**
+   * URL-safe identifier. Leave blank to generate it from the title.
+   */
+  slug: string;
+  year: number;
+  period: 'annual' | 'quarterly' | 'monthly' | 'custom';
+  reportType: 'revenue' | 'financial' | 'impact' | 'operations' | 'other';
+  file: string | Media;
+  summary: string;
+  keyMetrics?:
+    | {
+        label: string;
+        value: string;
+        unit?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Machine-readable text extracted from the uploaded report file.
+   */
+  extractedText?: string | null;
+  categories?: (string | Category)[] | null;
+  /**
+   * Search, social, and crawler metadata.
+   */
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    canonicalUrl?: string | null;
+    robots?: ('index-follow' | 'noindex-follow' | 'noindex-nofollow') | null;
+    openGraphImage?: (string | null) | Media;
+    schemaType?: ('WebPage' | 'NewsArticle' | 'Report' | 'Article') | null;
+  };
+  workflowStatus: 'draft' | 'review' | 'changes_requested' | 'approved' | 'published' | 'archived';
+  reviewNotes?: string | null;
+  publishedAt?: string | null;
+  approvedAt?: string | null;
+  archivedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news".
+ */
+export interface News {
+  id: string;
+  title: string;
+  /**
+   * URL-safe identifier. Leave blank to generate it from the title.
+   */
+  slug: string;
+  excerpt: string;
+  hero?: {
+    eyebrow?: string | null;
+    heading?: string | null;
+    summary?: string | null;
+    image?: (string | null) | Media;
+    layout?: ('standard' | 'compact' | 'immersive') | null;
+  };
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  author?: (string | null) | User;
+  categories?: (string | Category)[] | null;
+  tags?: (string | Tag)[] | null;
+  /**
+   * Search, social, and crawler metadata.
+   */
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    canonicalUrl?: string | null;
+    robots?: ('index-follow' | 'noindex-follow' | 'noindex-nofollow') | null;
+    openGraphImage?: (string | null) | Media;
+    schemaType?: ('WebPage' | 'NewsArticle' | 'Report' | 'Article') | null;
+  };
+  workflowStatus: 'draft' | 'review' | 'changes_requested' | 'approved' | 'published' | 'archived';
+  reviewNotes?: string | null;
+  publishedAt?: string | null;
+  approvedAt?: string | null;
+  archivedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: string;
+  action: 'create' | 'update';
+  actor?: (string | null) | User;
+  collectionSlug: string;
+  documentId: string;
+  previousValue?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  nextValue?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -180,6 +497,98 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: string;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'sitemap' | 'searchIndexing' | 'reportTextExtraction' | 'schedulePublish';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'sitemap' | 'searchIndexing' | 'reportTextExtraction' | 'schedulePublish') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -192,6 +601,30 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: string | Category;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: string | Tag;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: string | Page;
+      } | null)
+    | ({
+        relationTo: 'news';
+        value: string | News;
+      } | null)
+    | ({
+        relationTo: 'reports';
+        value: string | Report;
+      } | null)
+    | ({
+        relationTo: 'audit-logs';
+        value: string | AuditLog;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -240,6 +673,11 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  roles?: T;
+  status?: T;
+  avatar?: T;
+  bio?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -263,6 +701,9 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  caption?: T;
+  credit?: T;
+  visibility?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -274,6 +715,227 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        card?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  parent?: T;
+  fullPath?: T;
+  hero?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        summary?: T;
+        image?: T;
+        layout?: T;
+      };
+  layout?:
+    | T
+    | {
+        hero?:
+          | T
+          | {
+              hero?:
+                | T
+                | {
+                    eyebrow?: T;
+                    heading?: T;
+                    summary?: T;
+                    image?: T;
+                    layout?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        richText?:
+          | T
+          | {
+              content?: T;
+              id?: T;
+              blockName?: T;
+            };
+        cta?:
+          | T
+          | {
+              heading?: T;
+              summary?: T;
+              href?: T;
+              label?: T;
+              id?: T;
+              blockName?: T;
+            };
+        reportEmbed?:
+          | T
+          | {
+              report?: T;
+              displayMode?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        canonicalUrl?: T;
+        robots?: T;
+        openGraphImage?: T;
+        schemaType?: T;
+      };
+  workflowStatus?: T;
+  reviewNotes?: T;
+  publishedAt?: T;
+  approvedAt?: T;
+  archivedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news_select".
+ */
+export interface NewsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  excerpt?: T;
+  hero?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        summary?: T;
+        image?: T;
+        layout?: T;
+      };
+  content?: T;
+  author?: T;
+  categories?: T;
+  tags?: T;
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        canonicalUrl?: T;
+        robots?: T;
+        openGraphImage?: T;
+        schemaType?: T;
+      };
+  workflowStatus?: T;
+  reviewNotes?: T;
+  publishedAt?: T;
+  approvedAt?: T;
+  archivedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reports_select".
+ */
+export interface ReportsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  year?: T;
+  period?: T;
+  reportType?: T;
+  file?: T;
+  summary?: T;
+  keyMetrics?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        unit?: T;
+        id?: T;
+      };
+  extractedText?: T;
+  categories?: T;
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        canonicalUrl?: T;
+        robots?: T;
+        openGraphImage?: T;
+        schemaType?: T;
+      };
+  workflowStatus?: T;
+  reviewNotes?: T;
+  publishedAt?: T;
+  approvedAt?: T;
+  archivedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect<T extends boolean = true> {
+  action?: T;
+  actor?: T;
+  collectionSlug?: T;
+  documentId?: T;
+  previousValue?: T;
+  nextValue?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -282,6 +944,37 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -317,6 +1010,135 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: string;
+  navItems?:
+    | {
+        label: string;
+        href: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: string;
+  copyright?: string | null;
+  links?:
+    | {
+        label: string;
+        href: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: string;
+  siteName: string;
+  siteUrl: string;
+  defaultLocale: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seo-defaults".
+ */
+export interface SeoDefault {
+  id: string;
+  /**
+   * Search, social, and crawler metadata.
+   */
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    canonicalUrl?: string | null;
+    robots?: ('index-follow' | 'noindex-follow' | 'noindex-nofollow') | null;
+    openGraphImage?: (string | null) | Media;
+    schemaType?: ('WebPage' | 'NewsArticle' | 'Report' | 'Article') | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header_select".
+ */
+export interface HeaderSelect<T extends boolean = true> {
+  navItems?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  copyright?: T;
+  links?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  siteName?: T;
+  siteUrl?: T;
+  defaultLocale?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seo-defaults_select".
+ */
+export interface SeoDefaultsSelect<T extends boolean = true> {
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        canonicalUrl?: T;
+        robots?: T;
+        openGraphImage?: T;
+        schemaType?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -324,6 +1146,67 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSitemap".
+ */
+export interface TaskSitemap {
+  input?: unknown;
+  output: {
+    generated: boolean;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSearchIndexing".
+ */
+export interface TaskSearchIndexing {
+  input: {
+    collectionSlug?: string | null;
+    documentId?: string | null;
+  };
+  output: {
+    indexed: boolean;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskReportTextExtraction".
+ */
+export interface TaskReportTextExtraction {
+  input: {
+    reportId: string;
+  };
+  output: {
+    extracted: boolean;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSchedulePublish".
+ */
+export interface TaskSchedulePublish {
+  input: {
+    type?: ('publish' | 'unpublish') | null;
+    locale?: string | null;
+    doc?:
+      | ({
+          relationTo: 'pages';
+          value: string | Page;
+        } | null)
+      | ({
+          relationTo: 'news';
+          value: string | News;
+        } | null)
+      | ({
+          relationTo: 'reports';
+          value: string | Report;
+        } | null);
+    global?: string | null;
+    user?: (string | null) | User;
+  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

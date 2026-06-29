@@ -1,0 +1,7 @@
+interface:
+  display_name: "CMS Template"
+  short_description: "Payload CMS architecture and agent guardrails"
+  default_prompt: "Use $cms-template to implement a feature in this Payload CMS template."
+
+policy:
+  allow_implicit_invocation: true

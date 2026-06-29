@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  tsx: 4.21.0
+
 importers:
 
   .:
@@ -4133,11 +4136,6 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
-  tsx@4.22.4:
-    resolution: {integrity: sha512-X8EX+XV4QR5xCsrgxaED954zTDfY8KqlDtskKEL0cHhyS/P8b4IFOvGDQpsC9Q1XnLq915wEfwwY/zzskCtmhg==}
-    engines: {node: '>=18.0.0'}
-    hasBin: true
-
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -4260,7 +4258,7 @@ packages:
       stylus: '>=0.54.8'
       sugarss: ^5.0.0
       terser: ^5.16.0
-      tsx: ^4.8.1
+      tsx: 4.21.0
       yaml: ^2.4.2
     peerDependenciesMeta:
       '@types/node':
@@ -5654,7 +5652,7 @@ snapshots:
       payload: 3.85.1(graphql@16.14.2)(typescript@5.7.3)
       pluralize: 8.0.0
       ts-essentials: 10.0.3(typescript@5.7.3)
-      tsx: 4.22.4
+      tsx: 4.21.0
     transitivePeerDependencies:
       - typescript
 
@@ -8083,7 +8081,7 @@ snapshots:
       range-parser: 1.2.1
       sanitize-filename: 1.6.3
       ts-essentials: 10.0.3(typescript@5.7.3)
-      tsx: 4.22.4
+      tsx: 4.21.0
       undici: 7.24.4
       uuid: 13.0.2
       ws: 8.21.0
@@ -8760,12 +8758,6 @@ snapshots:
     dependencies:
       esbuild: 0.27.7
       get-tsconfig: 4.14.0
-    optionalDependencies:
-      fsevents: 2.3.3
-
-  tsx@4.22.4:
-    dependencies:
-      esbuild: 0.28.1
     optionalDependencies:
       fsevents: 2.3.3
 

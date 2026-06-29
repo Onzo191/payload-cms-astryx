@@ -56,6 +56,9 @@
       "sharp",
       "esbuild",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "tsx": "4.21.0"
+    }
   }
 }
